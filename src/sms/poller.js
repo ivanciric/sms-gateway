@@ -2,6 +2,7 @@ import db from '../db/index.js';
 import { config } from '../config.js';
 import { ModemClient } from './modem.js';
 import { logSms, logWebhook } from '../activity/index.js';
+import { buildWebhookPayload } from './webhookPayload.js';
 
 async function forwardToCallback(callbackUrl, payload, meta) {
   const start = Date.now();
@@ -75,12 +76,11 @@ async function processInboundMessages() {
         status: 'received',
         modemMessageId: msg.id,
       });
-      const payload = {
+      const payload = buildWebhookPayload({
         from: msg.number,
-        message: msg.content,
-        received_at: msg.date,
-        modem_message_id: msg.id,
-      };
+        text: msg.content,
+        messageId: msg.id,
+      });
 
       for (const apiKey of activeCallbacks) {
         await forwardToCallback(apiKey.callback_url, payload, {

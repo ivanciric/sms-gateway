@@ -70,12 +70,15 @@ Kada stigne SMS na modem, gateway šalje POST na callback URL svih aktivnih klju
 
 ```json
 {
-  "from": "0631234567",
-  "message": "Poruka",
-  "received_at": "...",
-  "modem_message_id": "123"
+  "from": "381631234567",
+  "text": "pozar-psnvreoci-veliki",
+  "messageId": "123"
 }
 ```
+
+- `from` — broj pošiljaoca (normalizovan, npr. `063308105` → `38163308105`)
+- `text` — sadržaj SMS-a
+- `messageId` — ID sa modema, za deduplikaciju (opciono)
 
 ## Pristup sa interneta
 
