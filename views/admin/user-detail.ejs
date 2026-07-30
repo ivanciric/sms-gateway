@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= targetUser.name %> — SMS Gateway</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">SMS Gateway</div>
+    <nav>
+      <a href="/panel/admin/users" class="active">Korisnici</a>
+      <a href="/panel/keys">API Ključevi</a>
+      <span style="color: var(--muted); font-size: 0.85rem;"><%= user.name %></span>
+      <form action="/panel/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-secondary btn-sm">Odjava</button>
+      </form>
+    </nav>
+  </header>
+
+  <div class="container">
+    <p style="margin-bottom:0.5rem;"><a href="/panel/admin/users">← Nazad</a></p>
+    <h1><%= targetUser.name %></h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">
+      <%= targetUser.email %> · <%= targetUser.project %>
+      <% if (targetUser.role === 'admin') { %><span class="badge badge-admin">Admin</span><% } %>
+    </p>
+
+    <% if (flash === 'revoked') { %>
+      <div class="alert alert-success">Ključ je poništen.</div>
+    <% } %>
+    <% if (flash === 'toggled') { %>
+      <div class="alert alert-success">Status korisnika je promenjen.</div>
+    <% } %>
+    <% if (flash === 'cannot_disable_self') { %>
+      <div class="alert alert-error">Ne možete deaktivirati sopstveni nalog.</div>
+    <% } %>
+
+    <% if (newKey) { %>
+      <div class="card">
+        <h2>Novi API ključ</h2>
+        <div class="alert alert-warning">Sačuvajte ključ sada — neće biti ponovo prikazan.</div>
+        <div class="key-display"><%= newKey %></div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>API Ključevi</h2>
+        <% if (targetUser.id !== user.id) { %>
+          <form method="POST" action="/panel/admin/users/<%= targetUser.id %>/toggle">
+            <button type="submit" class="btn btn-secondary btn-sm">
+              <%= targetUser.is_active ? 'Deaktiviraj' : 'Aktiviraj' %> korisnika
+            </button>
+          </form>
+        <% } %>
+      </div>
+
+      <form method="POST" action="/panel/admin/users/<%= targetUser.id %>/keys" style="margin: 1rem 0;">
+        <div class="form-row">
+          <div>
+            <label for="label">Naziv ključa</label>
+            <input type="text" id="label" name="label" placeholder="Production">
+          </div>
+          <div>
+            <label for="callback_url">Callback URL</label>
+            <input type="url" id="callback_url" name="callback_url" placeholder="https://...">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Izdaj novi ključ</button>
+      </form>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Prefiks</th>
+            <th>Naziv</th>
+            <th>Callback</th>
+            <th>Status</th>
+            <th>Kreiran</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% keys.forEach(function(key) { %>
+            <tr>
+              <td><code><%= key.key_prefix %>…</code></td>
+              <td><%= key.label %></td>
+              <td><%= key.callback_url || '—' %></td>
+              <td>
+                <% if (key.is_active) { %>
+                  <span class="badge badge-active">Aktivan</span>
+                <% } else { %>
+                  <span class="badge badge-revoked">Poništen</span>
+                <% } %>
+              </td>
+              <td><%= key.created_at %></td>
+              <td>
+                <% if (key.is_active) { %>
+                  <form method="POST" action="/panel/admin/users/<%= targetUser.id %>/keys/<%= key.id %>/revoke"
+                        onsubmit="return confirm('Poništiti ključ?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Poništi</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

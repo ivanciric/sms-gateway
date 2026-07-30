@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= editUser ? 'Izmena' : 'Novi' %> korisnik — SMS Gateway</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">SMS Gateway</div>
+    <nav>
+      <a href="/panel/admin/users" class="active">Korisnici</a>
+      <a href="/panel/keys">API Ključevi</a>
+      <span style="color: var(--muted); font-size: 0.85rem;"><%= user.name %></span>
+      <form action="/panel/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-secondary btn-sm">Odjava</button>
+      </form>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1><%= editUser ? 'Izmena korisnika' : 'Novi korisnik' %></h1>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="card" style="max-width:500px">
+      <form method="POST" action="/panel/admin/users/new">
+        <label for="name">Ime</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="project">Projekat</label>
+        <input type="text" id="project" name="project" required>
+
+        <label for="password">Lozinka</label>
+        <input type="password" id="password" name="password" required minlength="6">
+
+        <label for="role">Uloga</label>
+        <select id="role" name="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Kreiraj</button>
+          <a href="/panel/admin/users" class="btn btn-secondary">Otkaži</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

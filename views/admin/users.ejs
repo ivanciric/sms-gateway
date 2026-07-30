@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Korisnici — SMS Gateway</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">SMS Gateway</div>
+    <nav>
+      <a href="/panel/admin/users" class="active">Korisnici</a>
+      <a href="/panel/keys">API Ključevi</a>
+      <span style="color: var(--muted); font-size: 0.85rem;"><%= user.name %></span>
+      <form action="/panel/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-secondary btn-sm">Odjava</button>
+      </form>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <h1>Korisnici</h1>
+      <a href="/panel/admin/users/new" class="btn btn-primary">Novi korisnik</a>
+    </div>
+
+    <% if (flash === 'created') { %>
+      <div class="alert alert-success">Korisnik je kreiran.</div>
+    <% } %>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Ime</th>
+            <th>Email</th>
+            <th>Projekat</th>
+            <th>Uloga</th>
+            <th>Aktivni ključevi</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(function(u) { %>
+            <tr>
+              <td><%= u.name %></td>
+              <td><%= u.email %></td>
+              <td><%= u.project %></td>
+              <td>
+                <% if (u.role === 'admin') { %>
+                  <span class="badge badge-admin">Admin</span>
+                <% } else { %>
+                  User
+                <% } %>
+              </td>
+              <td><%= u.key_count %></td>
+              <td>
+                <% if (u.is_active) { %>
+                  <span class="badge badge-active">Aktivan</span>
+                <% } else { %>
+                  <span class="badge badge-revoked">Neaktivan</span>
+                <% } %>
+              </td>
+              <td><a href="/panel/admin/users/<%= u.id %>">Detalji →</a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Ključevi — SMS Gateway</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">SMS Gateway</div>
+    <nav>
+      <% if (user.role === 'admin') { %>
+        <a href="/panel/admin/users">Korisnici</a>
+      <% } %>
+      <a href="/panel/keys" class="active">API Ključevi</a>
+      <span style="color: var(--muted); font-size: 0.85rem;"><%= user.name %></span>
+      <form action="/panel/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-secondary btn-sm">Odjava</button>
+      </form>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1>API Ključevi</h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">
+      Projekat: <strong><%= user.project %></strong>
+    </p>
+
+    <% if (flash === 'revoked') { %>
+      <div class="alert alert-success">Ključ je poništen.</div>
+    <% } %>
+    <% if (flash === 'callback_updated') { %>
+      <div class="alert alert-success">Callback adresa je ažurirana.</div>
+    <% } %>
+
+    <% if (newKey) { %>
+      <div class="card">
+        <h2>Novi API ključ kreiran</h2>
+        <div class="alert alert-warning">Sačuvajte ključ sada — neće biti ponovo prikazan.</div>
+        <div class="key-display"><%= newKey %></div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <h2>Kreiraj novi ključ</h2>
+      <form method="POST" action="/panel/keys">
+        <div class="form-row">
+          <div>
+            <label for="label">Naziv</label>
+            <input type="text" id="label" name="label" placeholder="npr. Production">
+          </div>
+          <div>
+            <label for="callback_url">Callback URL (opciono)</label>
+            <input type="url" id="callback_url" name="callback_url" placeholder="https://app.example.com/sms/inbound">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Generiši ključ</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Vaši ključevi</h2>
+      <% if (keys.length === 0) { %>
+        <p style="color: var(--muted);">Nemate aktivnih ključeva.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Prefiks</th>
+              <th>Naziv</th>
+              <th>Callback</th>
+              <th>Status</th>
+              <th>Kreiran</th>
+              <th>Akcije</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% keys.forEach(function(key) { %>
+              <tr>
+                <td><code><%= key.key_prefix %>…</code></td>
+                <td><%= key.label %></td>
+                <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">
+                  <%= key.callback_url || '—' %>
+                </td>
+                <td>
+                  <% if (key.is_active) { %>
+                    <span class="badge badge-active">Aktivan</span>
+                  <% } else { %>
+                    <span class="badge badge-revoked">Poništen</span>
+                  <% } %>
+                </td>
+                <td><%= key.created_at %></td>
+                <td>
+                  <% if (key.is_active) { %>
+                    <div class="actions">
+                      <form method="POST" action="/panel/keys/<%= key.id %>/callback" class="inline-form">
+                        <input type="url" name="callback_url" value="<%= key.callback_url || '' %>" placeholder="Callback URL">
+                        <button type="submit" class="btn btn-secondary btn-sm">Sačuvaj</button>
+                      </form>
+                      <form method="POST" action="/panel/keys/<%= key.id %>/revoke" onsubmit="return confirm('Poništiti ključ?')">
+                        <button type="submit" class="btn btn-danger btn-sm">Poništi</button>
+                      </form>
+                    </div>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <h2>API primer</h2>
+      <pre style="background:var(--bg);padding:1rem;border-radius:6px;overflow-x:auto;font-size:0.85rem;color:var(--muted);">curl -X POST http://&lt;gateway&gt;/api/v1/sms/send \
+  -H "X-API-Key: sgw_..." \
+  -H "Content-Type: application/json" \
+  -d '{"to":"063308105","message":"test"}'</pre>
+    </div>
+  </div>
+</body>
+</html>

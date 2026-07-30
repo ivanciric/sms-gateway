@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>SMS Gateway</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <% if (typeof user !== 'undefined' && user) { %>
+  <header>
+    <div class="brand">SMS Gateway</div>
+    <nav>
+      <% if (user.role === 'admin') { %>
+        <a href="/panel/admin/users" class="<%= typeof activeNav !== 'undefined' && activeNav === 'users' ? 'active' : '' %>">Korisnici</a>
+      <% } %>
+      <a href="/panel/keys" class="<%= typeof activeNav !== 'undefined' && activeNav === 'keys' ? 'active' : '' %>">API Ključevi</a>
+      <span style="color: var(--muted); font-size: 0.85rem;"><%= user.name %></span>
+      <form action="/panel/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-secondary btn-sm">Odjava</button>
+      </form>
+    </nav>
+  </header>
+  <% } %>
+  <%- body %>
+</body>
+</html>

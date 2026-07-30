@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prijava — SMS Gateway</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+  <div class="login-box card">
+    <h1>SMS Gateway</h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Kontrol panel</p>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/panel/login">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required autofocus>
+
+      <label for="password">Lozinka</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit" class="btn btn-primary" style="width:100%">Prijava</button>
+    </form>
+  </div>
+</body>
+</html>
