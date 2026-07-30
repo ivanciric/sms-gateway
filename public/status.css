@@ -1,0 +1,229 @@
+.status-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.status-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.status-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.status-hostname {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.overall-badge {
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  letter-spacing: 0.05em;
+}
+
+.overall-badge.ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+  border: 2px solid var(--success);
+}
+
+.overall-badge.error {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 2px solid var(--danger);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.status-card h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.status-indicator {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.status-indicator.ok { color: var(--success); }
+.status-indicator.error { color: var(--danger); }
+.status-indicator.unknown { color: var(--warning); }
+
+.status-details,
+.status-list {
+  list-style: none;
+}
+
+.status-details li,
+.status-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.status-details li:last-child,
+.status-list li:last-child {
+  border-bottom: none;
+}
+
+.status-details span,
+.status-list span {
+  color: var(--muted);
+}
+
+.status-details strong,
+.status-list strong {
+  text-align: right;
+  word-break: break-word;
+}
+
+.status-list strong.ok,
+.status-details strong.ok { color: var(--success); }
+.status-list strong.error,
+.status-details strong.error { color: var(--danger); }
+.status-list strong.unknown { color: var(--warning); }
+
+.status-footer {
+  margin-top: 2rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.activity-section {
+  margin-top: 2rem;
+}
+
+.activity-title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.activity-card-wide {
+  grid-column: 1 / -1;
+}
+
+.activity-card h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.activity-table-wrap {
+  overflow-x: auto;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.activity-table {
+  width: 100%;
+  font-size: 0.82rem;
+}
+
+.activity-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.activity-table td.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 1.5rem;
+}
+
+.activity-table .mono {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.78rem;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-table .url-cell {
+  max-width: 280px;
+}
+
+.row-new {
+  animation: rowFlash 2s ease-out;
+}
+
+@keyframes rowFlash {
+  from { background: rgba(59, 130, 246, 0.35); }
+  to { background: transparent; }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.live-dot.connected {
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+
+@media (max-width: 900px) {
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .status-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .overall-badge {
+    font-size: 1.1rem;
+  }
+}

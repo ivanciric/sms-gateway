@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=SMS Gateway Kiosk
+Comment=Open SMS Gateway panel in kiosk mode
+Exec=/home/bb3/sms-gateway/deploy/kiosk.sh
+X-GNOME-Autostart-enabled=true

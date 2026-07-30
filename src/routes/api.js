@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import db from '../db/index.js';
 import { requireApiKey } from '../auth/index.js';
 import { ModemClient } from '../sms/modem.js';
+import { apiRequestLogger } from '../middleware/requestLogger.js';
+import { logSms } from '../activity/index.js';
 
 const router = Router();
+
+router.use(apiRequestLogger);
 
 router.post('/sms/send', requireApiKey, async (req, res) => {
   const { to, message } = req.body;
@@ -18,10 +21,14 @@ router.post('/sms/send', requireApiKey, async (req, res) => {
     const result = await modem.sendSms(String(to), String(message));
     const status = result.success ? 'sent' : 'modem_rejected';
 
-    db.prepare(
-      `INSERT INTO sms_logs (direction, phone_number, message, encode_type, status, api_key_id)
-       VALUES ('outbound', ?, ?, ?, ?, ?)`
-    ).run(to, message, result.encodeType, status, req.apiKey.id);
+    logSms({
+      direction: 'outbound',
+      phoneNumber: to,
+      message,
+      encodeType: result.encodeType,
+      status,
+      apiKeyId: req.apiKey.id,
+    });
 
     if (!result.success) {
       return res.status(502).json({
@@ -37,10 +44,13 @@ router.post('/sms/send', requireApiKey, async (req, res) => {
       modem_response: result.modemResponse,
     });
   } catch (err) {
-    db.prepare(
-      `INSERT INTO sms_logs (direction, phone_number, message, status, api_key_id)
-       VALUES ('outbound', ?, ?, ?, ?)`
-    ).run(to, message, `failed: ${err.message}`, req.apiKey.id);
+    logSms({
+      direction: 'outbound',
+      phoneNumber: to,
+      message,
+      status: `failed: ${err.message}`,
+      apiKeyId: req.apiKey.id,
+    });
 
     return res.status(502).json({ error: `Modem error: ${err.message}` });
   }

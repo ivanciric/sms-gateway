@@ -18,4 +18,7 @@ db.pragma('foreign_keys = ON');
 const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
 db.exec(schema);
 
+const migrations = fs.readFileSync(path.join(__dirname, 'migrations.sql'), 'utf8');
+db.exec(migrations);
+
 export default db;

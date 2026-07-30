@@ -108,4 +108,86 @@ export class ModemClient {
         date: msg.date || '',
       }));
   }
+
+  async getModemInfo(cmd) {
+    const params = new URLSearchParams({ cmd, isTest: 'false' });
+    const url = `${this.baseUrl}/goform/goform_get_cmd_process?${params}`;
+    const start = Date.now();
+
+    const response = await fetch(url, {
+      headers: this.headers,
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text.trim();
+    }
+
+    return { data, latencyMs: Date.now() - start };
+  }
+
+  async checkStatus() {
+    const start = Date.now();
+    const checks = {};
+
+    try {
+      checks.modem_main_state = await this.getModemInfo('modem_main_state');
+    } catch (err) {
+      return {
+        status: 'error',
+        url: this.baseUrl,
+        latencyMs: Date.now() - start,
+        state: 'unreachable',
+        signal: null,
+        network: null,
+        smsCapacity: null,
+        checks,
+        message: `ZTE modem nedostupan: ${err.message}`,
+      };
+    }
+
+    const extraCommands = ['signalbar', 'network_type', 'ppp_status', 'nwa_sms_capacity'];
+    await Promise.all(
+      extraCommands.map(async (cmd) => {
+        try {
+          checks[cmd] = await this.getModemInfo(cmd);
+        } catch (err) {
+          checks[cmd] = { error: err.message };
+        }
+      })
+    );
+
+    const mainState = checks.modem_main_state;
+    const raw = mainState.data;
+    let state = 'unknown';
+    if (typeof raw === 'object' && raw !== null) {
+      state = raw.modem_main_state || raw.modem_state || JSON.stringify(raw);
+    } else {
+      state = String(raw);
+    }
+
+    const signal = checks.signalbar?.data;
+    const network = checks.network_type?.data;
+    const smsCapacity = checks.nwa_sms_capacity?.data;
+
+    return {
+      status: 'ok',
+      url: this.baseUrl,
+      latencyMs: Date.now() - start,
+      state,
+      signal: typeof signal === 'object' ? signal : { raw: signal },
+      network: typeof network === 'object' ? network : { raw: network },
+      smsCapacity: typeof smsCapacity === 'object' ? smsCapacity : { raw: smsCapacity },
+      checks,
+      message: 'ZTE modem dostupan',
+    };
+  }
 }

@@ -6,12 +6,14 @@ import { config } from './config.js';
 import apiRoutes from './routes/api.js';
 import authRoutes from './routes/auth.js';
 import panelRoutes from './routes/panel.js';
+import statusRoutes, { statusPageHandler } from './routes/status.js';
 import { startSmsPoller } from './sms/poller.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
+app.set('trust proxy', true);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 
@@ -24,11 +26,14 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/status', statusPageHandler);
+
 app.get('/', (_req, res) => {
-  res.redirect('/panel/login');
+  res.redirect('/status');
 });
 
 app.use('/api/v1', apiRoutes);
+app.use('/api/v1', statusRoutes);
 app.use('/panel', authRoutes);
 app.use('/panel', panelRoutes);
 

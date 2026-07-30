@@ -12,4 +12,6 @@ export const config = {
   modemPollInterval: parseInt(process.env.MODEM_POLL_INTERVAL || '15', 10) * 1000,
   sessionCookieSecure: process.env.SESSION_COOKIE_SECURE === 'true',
   sessionMaxAge: 86400,
+  publicUrl: process.env.PUBLIC_URL || '',
+  statusRefreshSeconds: parseInt(process.env.STATUS_REFRESH_SECONDS || '10', 10),
 };

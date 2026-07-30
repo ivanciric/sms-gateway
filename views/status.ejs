@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Gateway Status</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/status.css">
+</head>
+<body class="status-page">
+  <div class="status-container">
+    <header class="status-header">
+      <div>
+        <h1>SMS Gateway</h1>
+        <p class="status-hostname"><%= status.hostname %> · <span id="timestamp"><%= status.timestamp %></span></p>
+      </div>
+      <div class="overall-badge <%= status.ok ? 'ok' : 'error' %>" id="overall-badge">
+        <%= status.ok ? 'SVE OK' : 'PROBLEM' %>
+      </div>
+    </header>
+
+    <div class="status-grid" id="status-grid">
+      <div class="status-card">
+        <h2>ZTE Modem</h2>
+        <div class="status-indicator <%= status.modem.status %>">
+          <%= status.modem.status === 'ok' ? 'Dostupan' : 'Nedostupan' %>
+        </div>
+        <ul class="status-details">
+          <li><span>URL</span><strong><%= status.modem.url %></strong></li>
+          <li><span>Stanje</span><strong><%= status.modem.state %></strong></li>
+          <li><span>Odgovor</span><strong><%= status.modem.latencyMs %> ms</strong></li>
+          <% if (status.modem.signal && status.modem.signal.signalbar) { %>
+            <li><span>Signal</span><strong><%= status.modem.signal.signalbar %></strong></li>
+          <% } %>
+          <% if (status.modem.network && status.modem.network.network_type) { %>
+            <li><span>Mreža</span><strong><%= status.modem.network.network_type %></strong></li>
+          <% } %>
+        </ul>
+      </div>
+
+      <div class="status-card">
+        <h2>Servisi</h2>
+        <ul class="status-list">
+          <li>
+            <span>SMS Gateway</span>
+            <strong class="<%= status.services.smsGateway.status %>">
+              OK · uptime <%= formatUptime(status.services.smsGateway.uptime) %>
+            </strong>
+          </li>
+          <li>
+            <span>Cloudflared</span>
+            <strong class="<%= status.services.cloudflared.status %>">
+              <%= status.services.cloudflared.message %>
+            </strong>
+          </li>
+          <li>
+            <span>Baza</span>
+            <strong class="<%= status.database.status %>"><%= status.database.status %></strong>
+          </li>
+          <li>
+            <span>Javni pristup</span>
+            <strong class="<%= status.publicAccess.status %>">
+              <% if (status.publicAccess.status === 'ok') { %>
+                OK · <%= status.publicAccess.latencyMs %> ms
+              <% } else { %>
+                <%= status.publicAccess.message %>
+              <% } %>
+            </strong>
+          </li>
+        </ul>
+      </div>
+
+      <div class="status-card">
+        <h2>Statistika</h2>
+        <ul class="status-details">
+          <li><span>Poslato SMS</span><strong><%= status.stats.outbound %></strong></li>
+          <li><span>Primljeno SMS</span><strong><%= status.stats.inbound %></strong></li>
+          <li><span>Aktivni API ključevi</span><strong><%= status.stats.activeKeys %></strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="activity-section">
+      <h2 class="activity-title">Live aktivnost</h2>
+
+      <div class="activity-grid">
+        <div class="status-card activity-card">
+          <h3>API zahtevi</h3>
+          <div class="activity-table-wrap">
+            <table class="activity-table" id="requests-table">
+              <thead>
+                <tr><th>Vreme</th><th>Metod</th><th>Status</th><th>Ključ</th><th>Detalj</th></tr>
+              </thead>
+              <tbody>
+                <% if (status.activity.requests.length === 0) { %>
+                  <tr><td colspan="5" class="empty">Nema zahteva</td></tr>
+                <% } %>
+                <% status.activity.requests.forEach(function(r) { %>
+                  <tr>
+                    <td><%= r.created_at %></td>
+                    <td><%= r.method %></td>
+                    <td><span class="badge <%= r.status_code < 400 ? 'badge-active' : 'badge-revoked' %>"><%= r.status_code %></span></td>
+                    <td><%= r.api_key_prefix ? r.api_key_prefix + '…' : '—' %></td>
+                    <td class="mono"><%= r.summary || r.path %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="status-card activity-card">
+          <h3>Primljeni / poslati SMS</h3>
+          <div class="activity-table-wrap">
+            <table class="activity-table" id="sms-table">
+              <thead>
+                <tr><th>Vreme</th><th>Smer</th><th>Broj</th><th>Poruka</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <% if (status.activity.sms.length === 0) { %>
+                  <tr><td colspan="5" class="empty">Nema SMS poruka</td></tr>
+                <% } %>
+                <% status.activity.sms.forEach(function(s) { %>
+                  <tr>
+                    <td><%= s.created_at %></td>
+                    <td><span class="badge <%= s.direction === 'inbound' ? 'badge-admin' : 'badge-active' %>"><%= s.direction %></span></td>
+                    <td><%= s.phone_number %></td>
+                    <td class="mono"><%= s.message %></td>
+                    <td><%= s.status %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="status-card activity-card activity-card-wide">
+          <h3>Webhook isporuka</h3>
+          <div class="activity-table-wrap">
+            <table class="activity-table" id="webhooks-table">
+              <thead>
+                <tr><th>Vreme</th><th>Status</th><th>HTTP</th><th>Callback</th><th>Od</th><th>Poruka</th><th>ms</th></tr>
+              </thead>
+              <tbody>
+                <% if (status.activity.webhooks.length === 0) { %>
+                  <tr><td colspan="7" class="empty">Nema webhook pokušaja</td></tr>
+                <% } %>
+                <% status.activity.webhooks.forEach(function(w) { %>
+                  <tr>
+                    <td><%= w.created_at %></td>
+                    <td><span class="badge <%= w.status === 'success' ? 'badge-active' : 'badge-revoked' %>"><%= w.status %></span></td>
+                    <td><%= w.http_status || '—' %></td>
+                    <td class="mono url-cell"><%= w.callback_url %></td>
+                    <td><%= w.phone_number || '—' %></td>
+                    <td class="mono"><%= w.sms_message ? w.sms_message.slice(0, 60) : '—' %></td>
+                    <td><%= w.duration_ms ?? '—' %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="status-footer">
+      <span class="live-dot" id="live-dot"></span> Realtime ·
+      <a href="/panel/login">Panel</a>
+    </footer>
+  </div>
+
+  <script>
+    const MAX_ROWS = 50;
+    const STATUS_POLL_MS = 60000;
+
+    function esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function clearEmpty(tbody) {
+      const empty = tbody.querySelector('.empty');
+      if (empty) empty.closest('tr')?.remove();
+    }
+
+    function trimRows(tbody) {
+      while (tbody.rows.length > MAX_ROWS) {
+        tbody.deleteRow(tbody.rows.length - 1);
+      }
+    }
+
+    function prependRow(tbody, html) {
+      clearEmpty(tbody);
+      tbody.insertAdjacentHTML('afterbegin', html);
+      const row = tbody.rows[0];
+      row.classList.add('row-new');
+      setTimeout(() => row.classList.remove('row-new'), 2000);
+      trimRows(tbody);
+    }
+
+    function rowRequest(r) {
+      return `<tr>
+        <td>${esc(r.created_at)}</td>
+        <td>${esc(r.method)}</td>
+        <td><span class="badge ${r.status_code < 400 ? 'badge-active' : 'badge-revoked'}">${r.status_code}</span></td>
+        <td>${r.api_key_prefix ? esc(r.api_key_prefix) + '…' : '—'}</td>
+        <td class="mono">${esc(r.summary || r.path)}</td>
+      </tr>`;
+    }
+
+    function rowSms(s) {
+      return `<tr>
+        <td>${esc(s.created_at)}</td>
+        <td><span class="badge ${s.direction === 'inbound' ? 'badge-admin' : 'badge-active'}">${esc(s.direction)}</span></td>
+        <td>${esc(s.phone_number)}</td>
+        <td class="mono">${esc(s.message)}</td>
+        <td>${esc(s.status)}</td>
+      </tr>`;
+    }
+
+    function rowWebhook(w) {
+      return `<tr>
+        <td>${esc(w.created_at)}</td>
+        <td><span class="badge ${w.status === 'success' ? 'badge-active' : 'badge-revoked'}">${esc(w.status)}</span></td>
+        <td>${w.http_status ?? '—'}</td>
+        <td class="mono url-cell">${esc(w.callback_url)}</td>
+        <td>${esc(w.phone_number || '—')}</td>
+        <td class="mono">${esc(w.sms_message ? w.sms_message.slice(0, 60) : '—')}</td>
+        <td>${w.duration_ms ?? '—'}</td>
+      </tr>`;
+    }
+
+    const requestsBody = document.querySelector('#requests-table tbody');
+    const smsBody = document.querySelector('#sms-table tbody');
+    const webhooksBody = document.querySelector('#webhooks-table tbody');
+    const liveDot = document.getElementById('live-dot');
+
+    const es = new EventSource('/api/v1/activity/stream');
+
+    es.addEventListener('request', (e) => {
+      prependRow(requestsBody, rowRequest(JSON.parse(e.data)));
+      document.getElementById('timestamp').textContent = new Date().toISOString();
+    });
+
+    es.addEventListener('sms', (e) => {
+      prependRow(smsBody, rowSms(JSON.parse(e.data)));
+      document.getElementById('timestamp').textContent = new Date().toISOString();
+    });
+
+    es.addEventListener('webhook', (e) => {
+      prependRow(webhooksBody, rowWebhook(JSON.parse(e.data)));
+      document.getElementById('timestamp').textContent = new Date().toISOString();
+    });
+
+    es.onopen = () => liveDot.classList.add('connected');
+    es.onerror = () => liveDot.classList.remove('connected');
+
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/v1/status');
+        const data = await res.json();
+        const badge = document.getElementById('overall-badge');
+        badge.textContent = data.ok ? 'SVE OK' : 'PROBLEM';
+        badge.className = 'overall-badge ' + (data.ok ? 'ok' : 'error');
+      } catch (_) {}
+    }, STATUS_POLL_MS);
+  </script>
+</body>
+</html>
