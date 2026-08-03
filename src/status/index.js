@@ -79,6 +79,7 @@ export async function collectStatus(options = {}) {
   const overallOk =
     database.status === 'ok' &&
     modemStatus.status === 'ok' &&
+    modemStatus.operational !== false &&
     services.cloudflared.status === 'ok';
 
   return {

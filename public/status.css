@@ -75,6 +75,7 @@
 }
 
 .status-indicator.ok { color: var(--success); }
+.status-indicator.warning { color: var(--warning); }
 .status-indicator.error { color: var(--danger); }
 .status-indicator.unknown { color: var(--warning); }
 

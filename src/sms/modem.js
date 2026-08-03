@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { encodeMessageBody, generateSmsTime } from './encoder.js';
+import { evaluateModemOperational } from './modemHealth.js';
 
 const DEFAULT_HEADERS = {
   Accept: 'application/json, text/javascript, */*; q=0.01',
@@ -154,7 +155,14 @@ export class ModemClient {
       };
     }
 
-    const extraCommands = ['signalbar', 'network_type', 'ppp_status', 'nwa_sms_capacity'];
+    const extraCommands = [
+      'sim_status',
+      'pin_status',
+      'signalbar',
+      'network_type',
+      'ppp_status',
+      'nwa_sms_capacity',
+    ];
     await Promise.all(
       extraCommands.map(async (cmd) => {
         try {
@@ -177,17 +185,23 @@ export class ModemClient {
     const signal = checks.signalbar?.data;
     const network = checks.network_type?.data;
     const smsCapacity = checks.nwa_sms_capacity?.data;
+    const sim = checks.sim_status?.data;
+    const evaluation = evaluateModemOperational(checks, state);
 
     return {
-      status: 'ok',
+      status: evaluation.operational ? 'ok' : 'warning',
+      operational: evaluation.operational,
+      simReady: evaluation.simReady,
+      issue: evaluation.issue,
       url: this.baseUrl,
       latencyMs: Date.now() - start,
       state,
       signal: typeof signal === 'object' ? signal : { raw: signal },
       network: typeof network === 'object' ? network : { raw: network },
+      sim: typeof sim === 'object' ? sim : { raw: sim },
       smsCapacity: typeof smsCapacity === 'object' ? smsCapacity : { raw: smsCapacity },
       checks,
-      message: 'ZTE modem dostupan',
+      message: evaluation.operational ? 'Modem i SIM operativni' : evaluation.issue,
     };
   }
 }

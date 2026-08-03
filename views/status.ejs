@@ -29,6 +29,8 @@
           <li><span>Odgovor</span><strong id="modem-latency">—</strong></li>
           <li><span>Signal</span><strong id="modem-signal">—</strong></li>
           <li><span>Mreža</span><strong id="modem-network">—</strong></li>
+          <li><span>SIM</span><strong id="modem-sim">—</strong></li>
+          <li><span>Napomena</span><strong id="modem-issue">—</strong></li>
         </ul>
       </div>
 
@@ -249,8 +251,14 @@
       badge.className = 'overall-badge ' + (data.ok ? 'ok' : 'error');
 
       const modemIndicator = document.getElementById('modem-indicator');
-      modemIndicator.textContent = data.modem.status === 'ok' ? 'Dostupan' : 'Nedostupan';
-      modemIndicator.className = 'status-indicator ' + data.modem.status;
+      const modemLabel =
+        data.modem.status === 'ok'
+          ? 'Operativan'
+          : data.modem.status === 'warning'
+            ? 'Upozorenje'
+            : 'Nedostupan';
+      modemIndicator.textContent = modemLabel;
+      modemIndicator.className = 'status-indicator ' + (data.modem.status || 'unknown');
 
       document.getElementById('modem-state').textContent = data.modem.state || '—';
       document.getElementById('modem-latency').textContent =
@@ -258,7 +266,10 @@
       document.getElementById('modem-signal').textContent =
         data.modem.signal?.signalbar || '—';
       document.getElementById('modem-network').textContent =
-        data.modem.network?.network_type || '—';
+        data.modem.network?.network_type || data.modem.network?.raw || '—';
+      document.getElementById('modem-sim').textContent =
+        data.modem.sim?.sim_status || data.modem.sim?.SIMStatus || (data.modem.simReady === false ? 'Nije spremna' : '—');
+      document.getElementById('modem-issue').textContent = data.modem.issue || data.modem.message || '—';
 
       const publicEl = document.getElementById('public-access');
       if (data.publicAccess.status === 'ok') {
