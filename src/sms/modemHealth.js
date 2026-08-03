@@ -8,6 +8,10 @@ function pickField(data, keys) {
   return null;
 }
 
+function normalize(text) {
+  return String(text).toLowerCase().replace(/_/g, ' ');
+}
+
 function haystack(checks, state) {
   const parts = [state];
   for (const check of Object.values(checks)) {
@@ -15,17 +19,17 @@ function haystack(checks, state) {
       parts.push(typeof check.data === 'object' ? JSON.stringify(check.data) : String(check.data));
     }
   }
-  return parts.join(' ').toLowerCase();
+  return normalize(parts.join(' '));
 }
 
 const NO_SIM_PATTERNS = [
-  'sim_not',
+  'sim undetected',
+  'sim not',
   'no sim',
   'nosim',
   'sim absent',
-  'sim_destroy',
-  'sim_not_ready',
-  'sim_not_insert',
+  'sim destroy',
+  'sim not ready',
   'sim not insert',
   'sim card absent',
   'sim failure',
@@ -33,28 +37,30 @@ const NO_SIM_PATTERNS = [
   'sim error',
   'no sim card',
   'simcard absent',
-  'modem_sim_not',
-  'sim undetected',
+  'modem sim not',
 ];
 
-const NO_NETWORK_PATTERNS = [
-  'no service',
+const BAD_NETWORK_PATTERNS = [
   'limited service',
+  'limited',
+  'no service',
   'not registered',
   'searching',
   'denied',
   'unavailable',
+  'none',
 ];
 
 export function evaluateModemOperational(checks, state) {
   const text = haystack(checks, state);
+  const stateNorm = normalize(state);
 
   for (const pattern of NO_SIM_PATTERNS) {
-    if (text.includes(pattern)) {
+    if (text.includes(pattern) || stateNorm.includes(pattern)) {
       return {
         operational: false,
         simReady: false,
-        issue: 'SIM kartica nije umetnuta ili nije spremna',
+        issue: 'SIM kartica nije umetnuta ili nije detektovana',
       };
     }
   }
@@ -67,9 +73,9 @@ export function evaluateModemOperational(checks, state) {
   ]);
 
   if (simStatus) {
-    const simLower = simStatus.toLowerCase();
-    const simOk = ['ready', 'valid', 'ok', 'present', 'inserted', '1'].some((s) => simLower.includes(s));
-    const simBad = ['absent', 'not', 'error', 'fail', 'destroy', '255', '0', '-1'].some((s) =>
+    const simLower = normalize(simStatus);
+    const simOk = ['ready', 'valid', 'ok', 'present', 'inserted'].some((s) => simLower.includes(s));
+    const simBad = ['absent', 'not', 'error', 'fail', 'destroy', 'undetected'].some((s) =>
       simLower.includes(s)
     );
 
@@ -79,10 +85,6 @@ export function evaluateModemOperational(checks, state) {
         simReady: false,
         issue: `SIM status: ${simStatus}`,
       };
-    }
-
-    if (simOk) {
-      // continue to network check
     }
   }
 
@@ -94,26 +96,39 @@ export function evaluateModemOperational(checks, state) {
   ]);
 
   if (networkType) {
-    const netLower = networkType.toLowerCase();
-    if (NO_NETWORK_PATTERNS.some((p) => netLower.includes(p)) || networkType === '0') {
+    const netLower = normalize(networkType);
+    if (BAD_NETWORK_PATTERNS.some((p) => netLower.includes(p)) || networkType === '0') {
       return {
         operational: false,
-        simReady: simStatus != null,
-        issue: `Nema mreže: ${networkType}`,
+        simReady: false,
+        issue: `Nema punu mrežnu registraciju: ${networkType}`,
       };
     }
+  } else {
+    return {
+      operational: false,
+      simReady: false,
+      issue: 'Mreža nije registrovana',
+    };
   }
 
   const pppStatus = pickField(checks.ppp_status?.data, ['ppp_status', 'PPPStatus', 'connectStatus']);
-  if (pppStatus && ['disconnected', 'disconnect', '0'].includes(pppStatus.toLowerCase())) {
-    // PPP disconnected alone isn't fatal if modem responds, but flag if no network too
-    if (!networkType || networkType === '0') {
-      return {
-        operational: false,
-        simReady: null,
-        issue: 'Modem nije povezan na mrežu',
-      };
-    }
+  if (pppStatus && normalize(pppStatus).includes('disconnect')) {
+    return {
+      operational: false,
+      simReady: false,
+      issue: `PPP nije povezan: ${pppStatus}`,
+    };
+  }
+
+  const goodStates = ['modem data connected', 'modem ready', 'connected'];
+  const hasGoodState = goodStates.some((s) => stateNorm.includes(s));
+  if (!hasGoodState && stateNorm.includes('modem')) {
+    return {
+      operational: false,
+      simReady: false,
+      issue: `Modem nije spreman: ${state}`,
+    };
   }
 
   return {
