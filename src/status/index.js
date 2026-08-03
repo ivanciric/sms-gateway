@@ -47,9 +47,8 @@ function getStats() {
   return { outbound, inbound, activeKeys, lastOutbound, lastInbound };
 }
 
-export async function collectStatus() {
-  const modem = new ModemClient();
-  const modemStatus = await modem.checkStatus();
+export async function collectStatus(options = {}) {
+  const { includeModem = true, includePublic = true } = options;
 
   let database = { status: 'ok' };
   try {
@@ -66,9 +65,16 @@ export async function collectStatus() {
     },
   };
 
-  const publicAccess = await checkPublicUrl();
   const stats = getStats();
   const activity = getRecentActivity();
+
+  const modemPromise = includeModem
+    ? new ModemClient().checkStatus()
+    : Promise.resolve({ status: 'unknown', message: 'Preskočeno', url: config.modemUrl });
+
+  const publicPromise = includePublic ? checkPublicUrl() : Promise.resolve({ status: 'unknown', message: 'Preskočeno' });
+
+  const [modemStatus, publicAccess] = await Promise.all([modemPromise, publicPromise]);
 
   const overallOk =
     database.status === 'ok' &&

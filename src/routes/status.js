@@ -55,7 +55,7 @@ export default router;
 
 export async function statusPageHandler(_req, res) {
   try {
-    const status = await collectStatus();
+    const status = await collectStatus({ includeModem: false, includePublic: false });
     res.render('status', {
       status,
       refreshSeconds: config.statusRefreshSeconds,

@@ -116,7 +116,7 @@ export class ModemClient {
 
     const response = await fetch(url, {
       headers: this.headers,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
 
     if (!response.ok) {

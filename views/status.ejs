@@ -22,19 +22,13 @@
     <div class="status-grid" id="status-grid">
       <div class="status-card">
         <h2>ZTE Modem</h2>
-        <div class="status-indicator <%= status.modem.status %>">
-          <%= status.modem.status === 'ok' ? 'Dostupan' : 'Nedostupan' %>
-        </div>
-        <ul class="status-details">
+        <div class="status-indicator unknown" id="modem-indicator">Proveravam…</div>
+        <ul class="status-details" id="modem-details">
           <li><span>URL</span><strong><%= status.modem.url %></strong></li>
-          <li><span>Stanje</span><strong><%= status.modem.state %></strong></li>
-          <li><span>Odgovor</span><strong><%= status.modem.latencyMs %> ms</strong></li>
-          <% if (status.modem.signal && status.modem.signal.signalbar) { %>
-            <li><span>Signal</span><strong><%= status.modem.signal.signalbar %></strong></li>
-          <% } %>
-          <% if (status.modem.network && status.modem.network.network_type) { %>
-            <li><span>Mreža</span><strong><%= status.modem.network.network_type %></strong></li>
-          <% } %>
+          <li><span>Stanje</span><strong id="modem-state">—</strong></li>
+          <li><span>Odgovor</span><strong id="modem-latency">—</strong></li>
+          <li><span>Signal</span><strong id="modem-signal">—</strong></li>
+          <li><span>Mreža</span><strong id="modem-network">—</strong></li>
         </ul>
       </div>
 
@@ -59,13 +53,7 @@
           </li>
           <li>
             <span>Javni pristup</span>
-            <strong class="<%= status.publicAccess.status %>">
-              <% if (status.publicAccess.status === 'ok') { %>
-                OK · <%= status.publicAccess.latencyMs %> ms
-              <% } else { %>
-                <%= status.publicAccess.message %>
-              <% } %>
-            </strong>
+            <strong class="unknown" id="public-access">Proveravam…</strong>
           </li>
         </ul>
       </div>
@@ -255,15 +243,44 @@
     es.onopen = () => liveDot.classList.add('connected');
     es.onerror = () => liveDot.classList.remove('connected');
 
-    setInterval(async () => {
+    function updateStatusCards(data) {
+      const badge = document.getElementById('overall-badge');
+      badge.textContent = data.ok ? 'SVE OK' : 'PROBLEM';
+      badge.className = 'overall-badge ' + (data.ok ? 'ok' : 'error');
+
+      const modemIndicator = document.getElementById('modem-indicator');
+      modemIndicator.textContent = data.modem.status === 'ok' ? 'Dostupan' : 'Nedostupan';
+      modemIndicator.className = 'status-indicator ' + data.modem.status;
+
+      document.getElementById('modem-state').textContent = data.modem.state || '—';
+      document.getElementById('modem-latency').textContent =
+        data.modem.latencyMs != null ? data.modem.latencyMs + ' ms' : '—';
+      document.getElementById('modem-signal').textContent =
+        data.modem.signal?.signalbar || '—';
+      document.getElementById('modem-network').textContent =
+        data.modem.network?.network_type || '—';
+
+      const publicEl = document.getElementById('public-access');
+      if (data.publicAccess.status === 'ok') {
+        publicEl.textContent = 'OK · ' + data.publicAccess.latencyMs + ' ms';
+        publicEl.className = 'ok';
+      } else {
+        publicEl.textContent = data.publicAccess.message || data.publicAccess.status;
+        publicEl.className = data.publicAccess.status;
+      }
+
+      document.getElementById('timestamp').textContent = data.timestamp;
+    }
+
+    async function refreshStatus() {
       try {
         const res = await fetch('/api/v1/status');
-        const data = await res.json();
-        const badge = document.getElementById('overall-badge');
-        badge.textContent = data.ok ? 'SVE OK' : 'PROBLEM';
-        badge.className = 'overall-badge ' + (data.ok ? 'ok' : 'error');
+        updateStatusCards(await res.json());
       } catch (_) {}
-    }, STATUS_POLL_MS);
+    }
+
+    refreshStatus();
+    setInterval(refreshStatus, STATUS_POLL_MS);
   </script>
 </body>
 </html>
